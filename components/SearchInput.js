@@ -1,6 +1,6 @@
 import React from "react"
 import {TextInput, View, StyleSheet} from "react-native"
-
+import PropTypes from "prop-types";
 
 export default class SearchInput extends React.Component {
     constructor(props) {
@@ -14,7 +14,7 @@ export default class SearchInput extends React.Component {
         this.setState({text: text})
     }
 
-    handleSubmitEditting = () => {
+    handleSubmitEditing = () => {
         const { onSubmit } = this.props
         const { text } = this.state
 
@@ -38,11 +38,21 @@ export default class SearchInput extends React.Component {
                     clearButtonMode="always"
                     style={styles.textInput}
                     onChangeText={this.handleChangeText}
+                    onSubmitEditing={this.handleSubmitEditing}
                 />
             </View>
         )
     }
 }
+
+SearchInput.propTypes = {
+    onSubmit: PropTypes.func.isRequired,
+    placeholder: PropTypes.string,
+};
+
+SearchInput.defaultProps = {
+    placeholder: '',
+};
 
 const styles = StyleSheet.create({
     container: {

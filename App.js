@@ -1,8 +1,9 @@
 import { StatusBar } from 'expo-status-bar'
 import React from 'react'
-import {ImageBackground, KeyboardAvoidingView, Platform, StyleSheet, Text, View} from 'react-native'
+import {ActivityIndicator, ImageBackground, KeyboardAvoidingView, Platform, StyleSheet, Text, View} from 'react-native'
 import SearchInput from "./components/SearchInput"
 import getImageForWeather from "./utils/getImageForWeather"
+import {fetchLocationId, fetchWeather} from "./utils/api";
 
 export default class App extends React.Component {
   constructor(props) {
@@ -18,36 +19,77 @@ export default class App extends React.Component {
 
   componentDidMount() {
     console.log('Component has mounted!')
-    this.handleUpdateLocation('Hue')
+    this.handleUpdateLocation('Hà Nội')
   }
 
-  handleUpdateLocation = city => {
-    this.setState({
-      location: city
+  handleUpdateLocation = async city => {
+    console.log(city)
+    if (!city) return
+
+    this.setState({ loading: true }, async () => {
+      try {
+        const locationId = await fetchLocationId(city)
+        const { location, weather, temperature } = await fetchWeather(locationId)
+        console.log(location)
+        this.setState({
+          loading: false,
+          error: false,
+          location,
+          weather,
+          temperature,
+        })
+      } catch (e) {
+        this.setState({
+          loading: false,
+          error: true,
+        })
+        console.log(e.error)
+      }
     })
   }
 
   render() {
-    const { location } = this.state
+    const { loading, error, location, weather, temperature } = this.state
     return (
         <KeyboardAvoidingView style={styles.container} behavior='padding'>
           <ImageBackground
-              source={getImageForWeather('Clear')}
+              source={getImageForWeather(weather)}
               style={styles.imageContainer}
               imageStyle={styles.image}>
 
             <View style={styles.detailsContainer}>
-              <Text style={[styles.largerText, styles.textStyle]}>{location}</Text>
-              <Text style={[styles.smallText, styles.textStyle]}>Light Cloud</Text>
-              <Text style={[styles.largerText, styles.textStyle]}>30°</Text>
+              <ActivityIndicator animating={loading} color='white' size='large'/>
 
-              <SearchInput
-                  placeholder='Search any city'
-                  onSubmit={this.handleUpdateLocation}
-              />
+              {!loading && (
+                  <View>
+                    {error && (
+                        <Text style={[styles.smallText, styles.textStyle]}>
+                          Could not load weather, please try a different city!
+                        </Text>
+                    )}
+
+                    {!error && (
+                       <View>
+                         <Text style={[styles.largerText, styles.textStyle]}>
+                           {location}
+                         </Text>
+                         <Text style={[styles.smallText, styles.textStyle]}>
+                           {weather}
+                         </Text>
+                         <Text style={[styles.largerText, styles.textStyle]}>
+                           {`${Math.round(temperature)}°`}
+                         </Text>
+                       </View>
+                    )}
+
+                    <SearchInput
+                        placeholder='Search any city'
+                        onSubmit={this.handleUpdateLocation}
+                    />
+                    </View>
+              )}
             </View>
           </ImageBackground>
-
           <StatusBar style="auto" />
         </KeyboardAvoidingView>
     )
